@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="Final ANt - AIR for iOS Build" basedir="." default="00. [package ipa for release]">
+
+	<fdt.loadProjectProperties />
+
+	<!-- PROJECT SETTINGS -->
+	<property file="ios.properties" />
+
+	<!-- START THE PARTY -->
+	<target name="00. [package ipa for release]">
+		
+		<antcall target="removeTrace" />	
+		<input message="certificate password:" addproperty="certPassword" />
+		<antcall target="01. [package]" />
+		
+	</target>
+
+	<target name="01. [package]">
+		<mkdir dir="${publish.dir}"/>
+		
+		<java jar="${FDTProjectSdkPath}/${adt}" fork="true" failonerror="true">
+			<arg value="-package" />
+
+			<arg value="-target" />
+			<arg value="ipa-app-store" />
+
+			<!-- NATIVE_SIGNING_OPTIONS -->
+			<arg value="-storetype" />
+			<arg value="pkcs12" />
+			<arg value="-keystore" />
+			<arg value="${certificate}" />
+			<arg value="-storepass" />
+			<arg value="${certPassword}" />
+			
+			<arg value="-provisioning-profile" />
+			<arg value="${provisioning.profile}" />
+
+			<!-- Name Of File To Create-->
+			<arg value="${publish.dir}/${publish.ipa}" />
+
+			<!-- App Descriptor-->
+			<arg value="${application.descriptor}" />
+
+			<!-- Files To Package -->
+			<arg value="-C" />
+			<arg value="${deploy.dir}/" />
+			<arg value="${deploy.swf}" />
+
+			<!-- add more assets here -->
+		</java>
+	</target>
+	
+	<target name="removeTrace">
+		<replaceregexp match="${logger.name}(.*?);" replace="" flags="gs">
+		    <fileset dir="${src.dir}" includes="**/*.as"/>
+		</replaceregexp>
+	</target>
+
+</project>

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="${projectName} - AIR for iOS Build" basedir="." default="00. [package ipa for debug]">
+
+	<fdt.loadProjectProperties />
+
+	<!-- PROJECT SETTINGS -->
+	<property file="ios.properties" />
+
+	<!-- START THE PARTY -->
+	<target name="00. [package ipa for debug]">
+		
+		<input message="certificate password:" addproperty="certPassword" />
+		
+		<antcall target="00. [extract-libs]" />
+		<antcall target="01. [package]" />	
+		<antcall target="02. [uninstall.previous]" />	
+		<antcall target="03. [install.on.simulator]" />	
+		<antcall target="04. [launch.on.simulator]" />		
+	</target>
+
+	<target name="01. [package]">
+		<mkdir dir="${publish.dir}"/>
+		
+		<java jar="${air_3.3sdk}/${adt}" fork="true" failonerror="true">
+			<arg value="-package" />
+			<arg value="-target" />
+			<arg value="ipa-test-interpreter-simulator" />
+			<!-- provisioning -->
+			<arg value="-provisioning-profile" />
+			<arg value="${provisioning.profile}" />
+			<!-- p12 -->
+			<arg value="-keystore" />
+			<arg value="${certificate}" />
+			<!-- type -->
+			<arg value="-storetype" />
+			<arg value="PKCS12" />
+			<!-- password -->
+			<arg value="-storepass" />
+			<arg value="${certPassword}" />
+			<!-- exported IPA -->
+			<arg value="${publish.dir}/${publish.ipa}" />
+			<arg value="${application.descriptor}" />
+			<arg value="-C" />
+			<arg value="${deploy.dir}/" />
+			<arg value="${deploy.swf}" />
+			<!-- AIR 3.3 SDK -->
+			<arg value="-platformsdk" />
+			<arg value="${user.home}/${simulatorSdk}" />
+			<!-- add more assets here -->
+		</java>
+	</target>
+	<!-- UNINSTALL PREVIOUS - if exists, if not fail silently -->
+	<target name="02. [uninstall.previous]">
+		<java jar="${air_3.3sdk}/${adt}" fork="true" failonerror="false">
+			<arg value="-uninstallApp" />
+			<arg value="-platform" />
+			<arg value="ios" />
+			<!-- AIR 3.3 SDK -->
+			<arg value="-platformsdk" />
+			<arg value="${user.home}/${simulatorSdk}" />
+			<arg value="-device" />
+			<arg value="ios-simulator" />
+			<!-- APP ID -->
+			<arg value="-appid" />
+			<arg value="${appid}" />
+		</java>
+	</target>
+	<!-- INSTALL ON DEVICE -->
+	<target name="03. [install.on.simulator]">
+		<mkdir dir="${publish.dir}"/>
+		<java jar="${air_3.3sdk}/${adt}" fork="true" failonerror="true">
+			<arg value="-installApp" />
+			<arg value="-platform" />
+			<arg value="ios" />
+			<!-- AIR 3.3 SDK -->
+			<arg value="-platformsdk" />
+			<arg value="${user.home}/${simulatorSdk}" />
+			<arg value="-device" />
+			<arg value="ios-simulator" />
+			<arg value="-package" />
+			<!-- IPA -->
+			<arg value="${publish.dir}/${publish.ipa}" />
+		</java>
+	</target>
+	<!-- LAUNCH ON DEVICE -->
+	<target name="04. [launch.on.simulator]">
+		<mkdir dir="${publish.dir}"/>
+		<java jar="${air_3.3sdk}/${adt}" fork="true" failonerror="false">
+			<arg value="-launchApp" />
+			<arg value="-platform" />
+			<arg value="ios" />
+			<!-- AIR 3.3 SDK -->
+			<arg value="-platformsdk" />
+			<arg value="${user.home}/${simulatorSdk}" />
+			<arg value="-device" />
+			<arg value="ios-simulator" />
+			<!-- APP ID -->
+			<arg value="-appid" />
+			<arg value="${appid}" />
+		</java>
+	</target>
+	
+	<!-- Check to see if libs has been extracted -->
+	<target name="-check-use-file">
+	    <available property="extracted.libs" file="extract.properties"/>
+	</target>
+	<target name="00. [extract-libs]" depends="-check-use-file" if="extracted.libs">
+		<delete file="extract.properties" />
+		<echo> unziping libs </echo>
+		<!-- Use command line unzip to keep file permissions -->
+		<exec executable="unzip" spawn="true">
+		    <arg line="-o ${lib.dir}.zip -d ." />
+		</exec>
+		<delete file="${lib.dir}.zip" />
+	</target>
+
+</project>

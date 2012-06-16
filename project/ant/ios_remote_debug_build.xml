@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="${projectName} - AIR for iOS Build" basedir="." default="00. [package ipa for debug]">
+
+	<fdt.loadProjectProperties />
+
+	<!-- PROJECT SETTINGS -->
+	<property file="ios.properties" />
+	
+	
+	<taskdef resource="net/sf/antcontrib/antlib.xml">
+      <classpath>
+          <pathelement location="${lib.dir}/ant-contrib-1.0b3.jar"/>
+      </classpath>
+    </taskdef>
+
+	<!-- GET THE JAR REQUIRED -->
+	<target name="use.init" description="Taskdef's the Find-Task" >
+	        <taskdef name="osacompile" classname="com.fivevoltlogic.antfarm.OSACompile" classpath="${lib.dir}/antfarm.jar"/>
+		 	<taskdef name="osascript" classname="com.fivevoltlogic.antfarm.OSAScript" classpath="${lib.dir}/antfarm.jar"/>
+	</target>
+
+	<!-- START THE PARTY -->
+	<target name="00. [package ipa for debug]">
+		
+		<input message="certificate password:" addproperty="certPassword" />
+		
+		<antcall target="00. [extract-libs]" />
+		<antcall target="01. [package]" />
+		<antcall target="02. [beam.ipa]" />
+		<antcall target="03. [launchDebugger]" />
+		
+	</target>
+
+	<target name="01. [package]">
+		<mkdir dir="${publish.dir}"/>
+		<java jar="${air_3.3sdk}/${adt}" fork="true" failonerror="true">
+			<arg value="-package" />
+			<arg value="-target" />
+			<arg value="ipa-debug-interpreter" />
+			<arg value="-listen" />
+			<arg value="${debug.port}" />
+			<!-- provisioning -->
+			<arg value="-provisioning-profile" />
+			<arg value="${provisioning.profile}" />
+			<!-- p12 -->
+			<arg value="-keystore" />
+			<arg value="${certificate}" />
+			<!-- type -->
+			<arg value="-storetype" />
+			<arg value="PKCS12" />
+			<!-- password -->
+			<arg value="-storepass" />
+			<arg value="${certPassword}" />
+			<!-- exported IPA -->
+			<arg value="${publish.dir}/${publish.ipa}" />
+			<arg value="${application.descriptor}" />
+			<arg value="-C" />
+			<arg value="${deploy.dir}/" />
+			<arg value="${deploy.swf}" />
+		</java>
+	</target>
+	
+	<!-- force sync to phone using extraction code : http://gamua.com/blog/2012/03/how-to-deploy-ios-apps-to-the-iphone-via-the-command-line/-->
+	<target name="02. [beam.ipa]" >
+		<echo>start chief and beam to phone</echo>
+			<echo file="${script.dir}/${chief.output.file}" append="true" >
+			<![CDATA[ 
+				${lib.dir}/${chief.path} ${FDTProjectPath}/${publish.folder}/${publish.ipa}
+			]]>
+			</echo>
+		<run.sync.script />
+	</target>
+	
+	<macrodef name="run.sync.script">
+    	<sequential>
+    		<exec executable="/bin/bash" >
+    			<arg line="${script.dir}/${chief.output.file}" />
+    		</exec>
+        </sequential>
+    </macrodef>
+	<!-- get the device id from idb -->
+	<target name="get.device.id">
+		<echo file="${script.dir}/${idb.deviceID.script}" append="true" >
+			<![CDATA[ 
+				${air_3.3sdk}/lib/aot/idb/idb -devices
+			]]>
+			</echo>
+		<run.idb.id />
+	</target>
+	
+	<!-- get handler from device id returned result, compile applescript to launch Terminal and start the fdb debugger -->
+	<target name="03. [launchDebugger]"  depends="use.init" >
+	    
+	    
+	    <if><!-- if manual id has not been set, then get it from device list -->
+			 <equals arg1="${manual.handle.id}" arg2="" />
+			 <then>
+			   <echo message="Extract handle ID" />
+			 	<antcallback target="extract-handle-id" return="handle.id"/>
+			 </then>
+			<else> <!-- set the handle id to manual.handle.id from properties file -->
+				<property name="handle.id" value="${manual.handle.id}" />
+			</else>
+		</if>
+	   
+		<echo message="Handle ID = ${handle.id}" />
+		<echo file="${script.dir}/${command.file}" append="false" >
+			<![CDATA[ 
+				tell application "Terminal"
+					activate
+					do script "${air_3.3sdk}/lib/aot/idb/idb -forward ${debug.default.port} ${debug.port} ${handle.id}"
+					do script "${FDTProjectSdkPath}/${debugger.path} -p ${debug.default.port}" in window 1
+				end tell
+				
+				tell application "Terminal"
+					activate
+					do script "${FDTProjectSdkPath}/${debugger.path} -p ${debug.default.port}"
+				end tell
+			]]>
+		</echo>
+		
+		<osacompile srcfile="${script.dir}/${command.file}" destfile="${script.dir}/${command.output.file}" creator="ToYS" executeonly="true" />
+		<launch.debugger />
+		<delete dir="${script.dir}" />
+		
+	</target>
+	
+	<!-- extract the handle id from device list -->
+	<target name="extract-handle-id"  depends="get.device.id" >
+		
+		<property name="result" value="${tmp.handle.result}" />
+	    <echo message="${result}" file="${script.dir}/tmp.device.id" />
+		    <loadfile property="filteredResult" srcFile="${script.dir}/tmp.device.id">
+		        <filterchain>
+		            <tokenfilter>
+		                <replaceregex pattern=" " replace="_" flags="g"/>
+		            </tokenfilter>
+		        </filterchain>
+		    </loadfile>
+		  
+		<substring text="${filteredResult}" start="43" end="45" property="processed.handler" />
+		<!-- now remove any left over underscores -->
+		<exec executable="sed" inputstring="${processed.handler}" outputproperty="stripped.handler.id">
+		  <arg value="s/_/ /g"/>
+		</exec>
+		<property name="handle.id" value="${stripped.handler.id}" />
+		
+	</target>
+	
+	<!-- run the temporary idb script created to get ID -->
+	<macrodef name="run.idb.id">
+    	<sequential>
+    		<exec executable="/bin/bash" outputproperty="tmp.handle.result" >
+    			<arg line="${script.dir}/${idb.deviceID.script}" />
+    		 </exec>
+        </sequential>
+    </macrodef>
+	<!-- launch the applescript to start debugger -->
+	<macrodef name="launch.debugger">
+		<sequential>
+        	<exec executable="open" >
+        	<arg line="${script.dir}/${command.output.file}" />
+        	</exec>
+        </sequential>
+	</macrodef>
+	<!-- get substring from devices returned results -->
+	<scriptdef name="substring" language="javascript">
+	     <attribute name="text" />
+	     <attribute name="start" />
+	     <attribute name="end" />
+	     <attribute name="property" />
+	     <![CDATA[
+	       var text = attributes.get("text");
+	       var start = attributes.get("start");
+	       var end = attributes.get("end") || text.length();
+	       project.setProperty(attributes.get("property"), text.substring(start, end));
+	     ]]>
+	  </scriptdef>
+	  
+	  <!-- Check to see if libs has been extracted -->
+	<target name="-check-use-file">
+	    <available property="extracted.libs" file="extract.properties"/>
+	</target>
+	<target name="00. [extract-libs]" depends="-check-use-file" if="extracted.libs">
+		<delete file="extract.properties" />
+		<echo> unziping libs </echo>
+		<!-- Use command line unzip to keep file permissions -->
+		<exec executable="unzip" spawn="true">
+		    <arg line="-o ${lib.dir}.zip -d ." />
+		</exec>
+		<delete file="${lib.dir}.zip" />
+	</target>
+
+</project>
