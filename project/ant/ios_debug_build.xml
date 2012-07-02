@@ -2,67 +2,46 @@
 
 <project name="${projectName} - AIR for iOS Build" basedir="." default="00. [package ipa for debug]">
 
-	<fdt.loadProjectProperties />
-
 	<!-- PROJECT SETTINGS -->
 	<property file="ios.properties" />
+	
+	<taskdef resource="net/sf/antcontrib/antlib.xml">
+      <classpath>
+          <pathelement location="${lib.dir}/ant-contrib-1.0b3.jar"/>
+      </classpath>
+    </taskdef>
 
 	<!-- START THE PARTY -->
 	<target name="00. [package ipa for debug]">
-		
-		<input message="certificate password:" addproperty="certPassword" />
-		<antcall target="00. [extract-libs]" />
-		<antcall target="01. [package]" />	
-		<antcall target="02. [beam.ipa]" />	
-		
-		<fdt.startDebugger switchperspectiveonbreakpoint="true" projectname="${projectName}"/>
+		<fdt.invoke.launchConfiguration file="../.settings/launch/${projectName} [WIRELESS DEBUG on DEVICE].launch" mode="debug" />
+		<!-- checks for the IPA every 200 milliseconds, then timeout -->
+		<waitfor maxwait="10" maxwaitunit="second" checkevery="200" >
+			<resourceexists>
+			  <file file="${basedir}/${deploy.dir}/${publish.ipa}"/>
+			</resourceexists>
+		</waitfor>
+		<antcall target="[check-IPA-exists]" />	
 	</target>
-
-	<target name="01. [package]">
-		<mkdir dir="${publish.dir}"/>
-		
-		<java jar="${FDTProjectSdkPath}/${adt}" fork="true" failonerror="true">
-			<arg value="-package" />
-
-			<arg value="-target" />
-
-			<!-- Include Debugging Information -->
-			<arg value="ipa-debug-interpreter" />
-			
-			<arg value="-connect" />
-			<arg value="${FDTHostIP}" />
-			
-			<arg value="-provisioning-profile" />
-			<arg value="${provisioning.profile}" />
-
-			<!-- NATIVE_SIGNING_OPTIONS -->
-			<arg value="-storetype" />
-			<arg value="pkcs12" />
-			<arg value="-keystore" />
-			<arg value="${certificate}" />
-			<arg value="-storepass" />
-			<arg value="${certPassword}" />
-
-			<!-- Name Of File To Create-->
-			<arg value="${publish.dir}/${publish.ipa}" />
-
-			<!-- App Descriptor-->
-			<arg value="${application.descriptor}" />
-
-			<!-- Files To Package -->
-			<arg value="-C" />
-			<arg value="${deploy.dir}/" />
-			<arg value="${deploy.swf}" />
-
-			<!-- add more assets here -->
-		</java>
+	
+	<!-- make sure that the IPA is there - if there use it, otherwise echo ERROR -->
+	<target name="[check-IPA-exists]">
+		<if>
+			 <available file="${basedir}/${deploy.dir}/${publish.ipa}" />
+	      <then>
+	      	<antcall target="01. [beam.ipa]" />	
+	      </then>
+	      <else>
+	      	<echo> ********** [ TIMEOUT ERROR: IPA can not be found ] ********** </echo>
+	      </else>
+	    </if>  
 	</target>
+	
 	<!-- force sync to phone using extraction code : http://gamua.com/blog/2012/03/how-to-deploy-ios-apps-to-the-iphone-via-the-command-line/-->
-	<target name="02. [beam.ipa]" >
+	<target name="01. [beam.ipa]" >
 		<echo>start chief and beam to phone</echo>
 			<echo file="${script.dir}/${chief.output.file}" append="true" >
 			<![CDATA[ 
-				${lib.dir}/${chief.path} ${FDTProjectPath}/${publish.folder}/${publish.ipa}
+				${lib.dir}/${chief.path} ${basedir}/${deploy.dir}/${publish.ipa}
 			]]>
 			</echo>
 		<run.sync.script />
@@ -76,19 +55,5 @@
     		</exec>
         </sequential>
     </macrodef>
-    
-    <!-- Check to see if libs has been extracted -->
-	<target name="-check-use-file">
-	    <available property="extracted.libs" file="extract.properties"/>
-	</target>
-	<target name="00. [extract-libs]" depends="-check-use-file" if="extracted.libs">
-		<delete file="extract.properties" />
-		<echo> unziping libs </echo>
-		<!-- Use command line unzip to keep file permissions -->
-		<exec executable="unzip" spawn="true">
-		    <arg line="-o ${lib.dir}.zip -d ." />
-		</exec>
-		<delete file="${lib.dir}.zip" />
-	</target>
     
 </project>

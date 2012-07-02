@@ -2,110 +2,79 @@
 <tns:projectTemplate xmlns:tns="http://fdt.powerflasher.com/ProjectTemplate"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://fdt.powerflasher.com/ProjectTemplate ../../projectTemplate.xsd">
-
-	<name>AS3 AIR3 iOS</name>
-	<version>2</version>
-	<description>This template will create the project '${projectName}' that contains only the basic libraries to develop and compile an AS3 mobile application targeting the iOS platform. ${newline}${newline}This template requires the Flex 4.6 or newer SDK and the AIR 3.3 SDK. Learn more about how to make sure you've got the right SDK here:${newline}http://fdt.powerflasher.com/docs/Setting_Up_and_Using_Mobile_Templates</description>
-	<projectType>AS 3 Mobile</projectType>
+	<name>iOS AIR3</name>
+	<version>3</version>
+	<description>FDT will setup a basic project targeting the ${targetPlatform} platform. 
+		${newline}A description.xml will be copied from the selected SDK to your project and pre populated with the fields set below. This template has a minimum requirement of the Flex 4.5 and AIR 2.6 SDKs. 
+		</description>
+	<projectType>${projectType}</projectType>
 	<variables>
-		<primaryGroup label="">
-			<variable name="appId" label="Application ID:" default="com.powerflasher.SampleApp"
-				type="string" />
-
-			<group label="Certificates">
-				<variable name="certificatePath" label="Developer Certificate:"
-					default="" type="file('p12')" />
-					
-				<variable name="provisioningPath" label="Provisioning Profile:"
-					default="" type="file('mobileprovision')" />
-				
+		<primaryGroup label="">	
+			<group label="Application Setup">
+				<variable name="appId" label="Application ID:" default="com.powerflasher.SampleApp"
+					type="string" />
+				<variable name="appName" label="Application Title:" default="My Application"
+					type="string" />
+				<variable name="appVersion" label="Application Version:" default="1.0"
+					type="string" />
+				<variable name="password" label="Certificate Password:" default="Enter Your Key Password" type="string" />
 				<variable name="airSdkPath" label="AIR 3.3 SDK:"
 					default="" type="folder('')" />
-				
 				<variable name="debugPort" label="Debug Port:" default="7936"
-				type="string" />
-				
+					type="string" />
 				<variable name="handleID" label="Handle ID:" default=""
-				type="string" />
-				
-				<variable name="usePass" label="Remember Certificate Password" default="false" type="boolean"/>
-				<variable name="password" label="Password:" default="Enter Your Key Password" type="string" enableIf="${usePass}"/>
+					type="string" />
 			</group>
-			
-			<group label="">
-				<variable name="appRendering" label="Rendering mode:"
-					default="auto" type="enum('auto','gpu','cpu')" />
-
-				<variable name="reorient" label="Orient automatically"
-					default="true" type="boolean" />
-
-				<variable name="appFullscreen" label="Hide title bar (fullscreen)"
-					default="false" type="boolean" />
-			</group>
-		</primaryGroup>
-		
+			<group label="Project Setup">
+				<variable name="selectedSDK" label="Default SDK"
+						default="_highest" type="sdk(4.5,4.9,2.6,4)" />									
+				<variable name="useFlex" label="Use Flex Framework"
+					default="false" type="boolean" />				
+			</group>		
+		</primaryGroup>				
 	</variables>
-
+	<extensions>
+		<mobile>
+		      <createDescriptor platform="${targetPlatform}" file="bin/${projectName}-app.xml"/>	
+              <setProperty platform="${targetPlatform}" name="ACTIVE" value="true"/>
+		      <setDescriptorProperty platform="${targetPlatform}" name="APPNAME" value= "${appName}"/>
+		      <setDescriptorProperty platform="${targetPlatform}" name="APPID" value= "${appId}"/>
+		      <setDescriptorProperty platform="${targetPlatform}" name="APPFILENAME" value= "${fileName}"/>
+		      <setDescriptorProperty platform="${targetPlatform}" name="APPVERSION" value= "${appVersion}"/>
+		</mobile>
+	</extensions>	
 	<expressions>
-
-		<!-- Helper Expressions -->
-		<expression name="threeTabs" value="'&#09;&#09;&#09;'" />
-		<expression name="tabs" value="'&#09;&#09;&#09;&#09;&#09;'" />
-		<expression name="openTag" value="'&lt;'" />
-		<expression name="closeTag" value="concat('/&gt;',${newline})" />
-
-		<expression name="postFileName"
-			value="replaceRegex(${projectName}, '([^\w]+)', '')" />
-		<expression name="fileName"
-			value="replaceRegex(${postFileName}, '(^\d+)', '')" />
-
-		<expression name="postPackageStructure" value="replaceRegex(${appId}, '([.]+)', '/')" />
-		<expression name="packageStructure" value="replaceRegex(${appId}, '([.]+)', '/')" />
-
-		<!-- Folders -->
-		<expression name="sourceFolder" value="'src'" />
-		<expression name="outputFolder" value="'bin'" />
-
-		<!-- Reorinet Code -->
-		<expression name="reorient_import"
-			value="if(${reorient},concat('import flash.display.StageAlign;',${newline},'    import flash.display.StageScaleMode;',${newline}),'')"></expression>
-		<expression name="reorient_code"
-			value="if(${reorient},concat(${newline},${threeTabs},'stage.align = StageAlign.TOP_LEFT;',${newline},${threeTabs},'stage.scaleMode = StageScaleMode.NO_SCALE;'),'')"></expression>
-		
-		<!-- add the class path to the properties file -->
-		<expression name="mainClazzPath"
-			value="replaceRegex(${appId}, '([.]+)', '/')" />
-			
-		<expression name="clazzDir"
-			value="replaceRegex(${fileName}, '(^\d+)', '')" />
-		
+		<expression name="missingSDKWarning">This template requires the Flex 4.5 SDK or later.</expression>
+		<expression name="hasMinimumSDK" value="sdkVersionExists('4.5','4.9')"/>
+		<expression name="templateError" value="if(!${hasMinimumSDK},${missingSDKWarning},'')"/>				
+		<expression name="projectType" value="if(${useFlex},'AIR Mobile Flex','AIR Mobile')" />
+		<expression name="targetPlatform" value="'iOS'" />
+		<expression name="postFileName" value="replaceRegex(${projectName}, '([^\w]+)', '')" />
+		<expression name="fileName" value="replaceRegex(${postFileName}, '(^\d+)', '')" />
+		<expression name="packageStructure" value="replaceRegex(${appId}, '([.]+)', '/')" />		
+		<expression name="sourceFolder" value="src" />		
+		<expression name="outputFolder" value="bin" />				
+		<expression name="autoLibFolder" value="lib" />	
 		<!--  Password -->
-		<expression name="appPassword" value="if(${usePass},concat('certPassword',${threeTabs},'= ',${password}),'')"></expression>
-
+		<expression name="appPassword" value="concat('certPassword','= ', ${password})"></expression>			
 	</expressions>
 	<folders>
-		<sourceFolder>${sourceFolder}</sourceFolder>
+		<sourceFolder>${sourceFolder}</sourceFolder> 
 		<outputFolder>${outputFolder}</outputFolder>
-		<autoLibFolder>lib</autoLibFolder>
+		<autoLibFolder>${autoLibFolder}</autoLibFolder>
 	</folders>
-
 	<contentCreation processFileExtensions="mxml,xml,launch,properties,as">
-
-		<file src="as/start.as" dest="${sourceFolder}/${packageStructure}/${fileName}.as" />
-
 		<!-- Launch -->
 		<folder src="launch" dest=".settings/launch" process="true" />
-		
 		<!-- ant build files -->
 		<folder src="ant" dest="ant" process="true" />
-		
-		<!-- certificate -->
-		<folder src="certificate" dest="certificate" process="true" />
-		
-		<!-- app descriptor -->
-		<file src="xml/start-app.xml" dest="${outputFolder}/${fileName}-app.xml" process="true"/>
-
+		<!-- If AS -->
+		<file src="as/start.as" dest="${sourceFolder}/${packageStructure}/${fileName}.as" if="!${useFlex}"/>		
+		<!-- If Flex -->
+		<file src="mxml/viewNavApp.mxml" dest="${sourceFolder}/${packageStructure}/${fileName}.mxml" if="${useFlex}"/>
+		<file src="mxml/homeView.mxml" dest="${sourceFolder}/${packageStructure}/views/HomeView.mxml" if="${useFlex}"/>
 	</contentCreation>
-	
+	<!-- unzip the libs when project created -->
+	<antCall antFile="project/ant/unpack.xml" />
 </tns:projectTemplate>
 

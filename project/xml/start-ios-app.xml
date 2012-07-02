@@ -169,10 +169,14 @@
 		</manifestAdditions> 
 	</android> -->
   <!-- End of the schema for adding the android specific tags in AndroidManifest.xml file -->
-  <android>
-    <manifestAdditions><![CDATA[<manifest>
-    <uses-permission android:name="android.permission.INTERNET" />
-  </manifest>]]></manifestAdditions>
-  </android>  
+      <iPhone>
+        <InfoAdditions><![CDATA[
+			<key>UIDeviceFamily</key>
+			<array>
+				<string>1</string>
+			</array>
+		]]></InfoAdditions>
+        <requestedDisplayResolution>high</requestedDisplayResolution>
+    </iPhone>
 </application>
 

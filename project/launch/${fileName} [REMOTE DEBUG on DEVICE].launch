@@ -1,30 +1,31 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<launchConfiguration type="com.powerflasher.fdt.ui.MxmlcGroup">
-<stringAttribute key="ADL_ARGUMENTS" value=""/>
+<launchConfiguration type="com.powerflasher.fdt.ui.MobileApplicationGroup">
 <stringAttribute key="ADL_DESCRIPTOR_FILE" value="${outputFolder}/${fileName}-app.xml"/>
 <stringAttribute key="ADL_SCREENSIZE" value="768x1004:768x1024"/>
-<stringAttribute key="APP_ARGUMENTS" value=""/>
-<stringAttribute key="ARGUMENTS" value=""/>
-<intAttribute key="AIR_VIEWER_CONF" value="0"/>
-<booleanAttribute key="KILL_PREVIUOS_VIEWER" value="true"/>
+<intAttribute key="AIR_VIEWER_CONF" value="1"/>
+<stringAttribute key="ARGUMENTS" value="-static-link-runtime-shared-libraries=true&#10;-target-player={playerVersion}&#10;-library-path+=&quot;{flexSDK}/frameworks/locale/en_US&quot;&#10;-default-size=550,400"/>
+<booleanAttribute key="CLEAR_DATA" value="false"/>
+<intAttribute key="DEBUG_VIA" value="0"/>
+<booleanAttribute key="DISABLE_COMPILE_PROCESS" value="false"/>
+<booleanAttribute key="INSTALL_APPLICATION" value="true"/>
 <stringAttribute key="LAUNCHER_DEPENDENCIES" value="[Self]&#10;${fileName}_ios_remote_debug_build"/>
+<intAttribute key="LAUNCH_METHOD" value="0"/>
 <stringAttribute key="MAIN_CLASS" value="src/${packageStructure}/${fileName}.as"/>
-<stringAttribute key="MOBILE_PRESET" value="iPad"/>
-<stringAttribute key="OUTPUT" value="${outputFolder}/${fileName}.swf"/>
+<stringAttribute key="MOBILE_PRESET" value="Apple iPad1/2"/>
+<intAttribute key="PACKAGE_METHOD" value="0"/>
 <booleanAttribute key="PASS_CP" value="true"/>
-<booleanAttribute key="PASS_EXTERNS" value="true"/>
+<booleanAttribute key="PASS_EXTERNS" value="false"/>
 <booleanAttribute key="PASS_MAIN_CLASS" value="true"/>
 <booleanAttribute key="PASS_RSLS" value="false"/>
 <booleanAttribute key="PASS_SWCS" value="true"/>
+<booleanAttribute key="START_SWF_ENABLED" value="false"/>
 <intAttribute key="PLAYER_HEIGHT" value="400"/>
 <intAttribute key="PLAYER_WIDTH" value="550"/>
 <stringAttribute key="POST_COMPILE_ANT" value=""/>
 <stringAttribute key="PRE_COMPILE_ANT" value=""/>
 <stringAttribute key="PROJECT_NAME" value="${projectName}"/>
-<stringAttribute key="PUBLISHER_ID" value=""/>
-<booleanAttribute key="START_SWF_ENABLED" value="false"/>
-<stringAttribute key="START_SWF_LOCATION" value="${outputFolder}/${fileName}.swf"/>
 <stringAttribute key="START_SWF_WITH" value="AIR Debug Launcher"/>
+<stringAttribute key="TARGET_PLATFORM" value="iOS"/>
 <booleanAttribute key="USE_PROJECT_COMPILER_ARGUMENTS" value="true"/>
 <booleanAttribute key="USE_SWF_SELECTED" value="false"/>
 <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
@@ -34,3 +35,5 @@
 <listEntry value="4"/>
 </listAttribute>
 </launchConfiguration>
+
+

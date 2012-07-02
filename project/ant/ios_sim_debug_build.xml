@@ -2,24 +2,52 @@
 
 <project name="${projectName} - AIR for iOS Build" basedir="." default="00. [package ipa for debug]">
 
-	<fdt.loadProjectProperties />
-
 	<!-- PROJECT SETTINGS -->
 	<property file="ios.properties" />
+	<property file="../.settings/com.powerflasher.fdt.core.prefs" />
+	
+	<taskdef resource="net/sf/antcontrib/antlib.xml">
+      <classpath>
+          <pathelement location="${lib.dir}/ant-contrib-1.0b3.jar"/>
+      </classpath>
+    </taskdef>
 
 	<!-- START THE PARTY -->
 	<target name="00. [package ipa for debug]">
 		
 		<input message="certificate password:" addproperty="certPassword" />
+		<fdt.invoke.launchConfiguration file="../.settings/launch/${projectName} [WIRELESS DEBUG on SIMULATOR].launch" mode="debug" />
 		
-		<antcall target="00. [extract-libs]" />
-		<antcall target="01. [package]" />	
-		<antcall target="02. [uninstall.previous]" />	
-		<antcall target="03. [install.on.simulator]" />	
-		<antcall target="04. [launch.on.simulator]" />
-		
-		<fdt.startDebugger switchperspectiveonbreakpoint="true" projectname="${projectName}"/>
+		<!-- checks for the SWF every 200 milliseconds, then timeout -->
+		<waitfor maxwait="10" maxwaitunit="second" checkevery="200" >
+			<resourceexists>
+			  <file file="${basedir}/${deploy.dir}/${deploy.swf}"/>
+			</resourceexists>
+		</waitfor>
+		<antcall target="[check-SWF-exists]" />	
 	</target>
+	
+	<!-- make sure that the SWF is there - if there use it, otherwise echo ERROR -->
+	<target name="[check-SWF-exists]">
+		<if>
+			 <available file="${basedir}/${deploy.dir}/${deploy.swf}" />
+	      <then>
+	      		<antcall target="killADL" />	
+	      		<antcall target="01. [package]" />	
+				<antcall target="02. [uninstall.previous]" />	
+				<antcall target="03. [install.on.simulator]" />	
+	      		<antcall target="killADL" />	
+				<antcall target="04. [launch.on.simulator]" />
+	      		<antcall target="killADL" />	
+	      		<delete file="${deploy.dir}/${deploy.swf}" />
+	      </then>
+	      <else>
+	      	<echo> ********** [ TIMEOUT ERROR: SWF can not be found ] ********** </echo>
+	      </else>
+	    </if>  
+	    <fdt.startDebugger switchperspectiveonbreakpoint="true" projectname="${projectName}"/>
+	</target>
+	
 
 	<target name="01. [package]">
 		<mkdir dir="${publish.dir}"/>
@@ -31,10 +59,10 @@
 			<arg value="-connect" />
 			<!-- provisioning -->
 			<arg value="-provisioning-profile" />
-			<arg value="${provisioning.profile}" />
+			<arg value="../${com.powerflasher.fdt.core.mobile.iOS.SIGNATURE.PROVISIONING.FILE}" />
 			<!-- p12 -->
 			<arg value="-keystore" />
-			<arg value="${certificate}" />
+			<arg value="../${com.powerflasher.fdt.core.mobile.iOS.SIGNATURE.CERTIFICATE}" />
 			<!-- type -->
 			<arg value="-storetype" />
 			<arg value="PKCS12" />
@@ -43,7 +71,7 @@
 			<arg value="${certPassword}" />
 			<!-- exported IPA -->
 			<arg value="${publish.dir}/${publish.ipa}" />
-			<arg value="${application.descriptor}" />
+			<arg value="../${com.powerflasher.fdt.core.mobile.iOS.MOBILE.DESCRIPTOR}" />
 			<arg value="-C" />
 			<arg value="${deploy.dir}/" />
 			<arg value="${deploy.swf}" />
@@ -104,18 +132,11 @@
 		</java>
 	</target>
 	
-	<!-- Check to see if libs has been extracted -->
-	<target name="-check-use-file">
-	    <available property="extracted.libs" file="extract.properties"/>
-	</target>
-	<target name="00. [extract-libs]" depends="-check-use-file" if="extracted.libs">
-		<delete file="extract.properties" />
-		<echo> unziping libs </echo>
-		<!-- Use command line unzip to keep file permissions -->
-		<exec executable="unzip" spawn="true">
-		    <arg line="-o ${lib.dir}.zip -d ." />
-		</exec>
-		<delete file="${lib.dir}.zip" />
+	<!-- close ADL viewer, workaround to bypass the compiler -->
+	<target name="killADL">
+		<exec executable="/bin/bash" >
+			<arg line="${lib.dir}/killall-adl" />
+		 </exec>
 	</target>
 	
 </project>

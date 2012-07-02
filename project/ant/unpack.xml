@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project default="00. [Unpack Libs]">
+	<!-- START THE PARTY AND UNPACK LIBS-->
+	<target name="00. [Unpack Libs]">
+	  	<echo>** unziping libs before project creation **</echo>
+		<!-- Use command line unzip to keep file permissions and extensions -->
+		<exec executable="unzip" spawn="false" failonerror="true">
+		    <arg line="-o ant/libs.zip -d ant/" />
+		</exec>
+			<delete file="ant/libs.zip" /> <!-- love the farm, leave no trace -->
+			<delete file="ant/unpack.xml" />
+	 </target>
+</project>
